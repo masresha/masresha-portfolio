@@ -5,6 +5,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const preloader = document.getElementById("preloader");
+  const nav = document.querySelector(".nav");
+  const navToggle = document.querySelector(".nav-toggle");
+  const scrollProgressBar = document.querySelector(".scroll-progress-bar");
 
   // Trigger initial page-load animation and hide preloader
   window.addEventListener("load", () => {
@@ -15,6 +18,21 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 500);
     }
   });
+
+  // Mobile nav toggle
+  if (nav && navToggle) {
+    navToggle.addEventListener("click", () => {
+      const isOpen = nav.classList.toggle("nav-open");
+      navToggle.classList.toggle("is-open", isOpen);
+    });
+
+    nav.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        nav.classList.remove("nav-open");
+        navToggle.classList.remove("is-open");
+      });
+    });
+  }
 
   // Scroll-based reveal animations
   const revealEls = document.querySelectorAll(".reveal-on-scroll");
@@ -41,6 +59,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Smooth scroll for internal links
+  const navLinks = document.querySelectorAll('.nav a[href^="#"]');
+
   document.querySelectorAll('a[href^="#"]').forEach((link) => {
     link.addEventListener("click", (e) => {
       const targetId = link.getAttribute("href");
@@ -53,6 +73,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const offsetPosition = elementPosition - headerOffset;
 
       window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+
+      if (link.closest(".nav") && navLinks.length) {
+        navLinks.forEach((navLink) => {
+          navLink.classList.toggle("active", navLink === link);
+        });
+      }
     });
   });
 
@@ -80,5 +106,44 @@ document.addEventListener("DOMContentLoaded", () => {
       const mailto = `mailto:masresha.tsegaye@gmail.com?subject=${subject}&body=${body}`;
       window.location.href = mailto;
     });
+  }
+
+  // Scroll spy for navbar active state
+  const sections = document.querySelectorAll("main section[id]");
+  if ("IntersectionObserver" in window && sections.length && navLinks.length) {
+    const spyObserver = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (!visible) return;
+        const id = visible.target.id;
+
+        navLinks.forEach((link) => {
+          const href = link.getAttribute("href");
+          link.classList.toggle("active", href === `#${id}`);
+        });
+      },
+      {
+        root: null,
+        threshold: 0.4,
+      }
+    );
+
+    sections.forEach((section) => spyObserver.observe(section));
+  }
+
+  // Header scroll progress indicator
+  if (scrollProgressBar) {
+    const updateScrollProgress = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? scrollTop / docHeight : 0;
+      scrollProgressBar.style.transform = `scaleX(${progress})`;
+    };
+
+    window.addEventListener("scroll", updateScrollProgress, { passive: true });
+    updateScrollProgress();
   }
 });
